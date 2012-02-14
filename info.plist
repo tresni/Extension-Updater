@@ -7,21 +7,20 @@
 	<key>category</key>
 	<string>SCRIPTS</string>
 	<key>command</key>
-	<string>RET=$(php -f script.php)
-echo $RET
-echo $RET | pbcopy</string>
+	<string>RET=$(php -f script.php -- "{query}")
+echo $RET</string>
 	<key>disabled</key>
 	<false/>
 	<key>escapequery</key>
-	<true/>
+	<false/>
 	<key>escapequerybackquotes</key>
-	<true/>
+	<false/>
 	<key>escapequerybrackets</key>
-	<true/>
+	<false/>
 	<key>escapequeryquotes</key>
-	<true/>
+	<false/>
 	<key>escapequerysemicolons</key>
-	<true/>
+	<false/>
 	<key>growloutput</key>
 	<true/>
 	<key>growloutputsticky</key>
@@ -31,7 +30,7 @@ echo $RET | pbcopy</string>
 	<key>logging</key>
 	<false/>
 	<key>parameter</key>
-	<integer>0</integer>
+	<integer>2</integer>
 	<key>silent</key>
 	<true/>
 	<key>subtitle</key>
