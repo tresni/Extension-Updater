@@ -54,6 +54,7 @@
 	// display help menu to user
 	else if ($comm == "help") {
 		
+		echo "¬ update list - List extensions that use Extension Update\r";
 		echo "¬ update check - Check for available updates\r";
 		echo "¬ update - Update all available extensions\r";
 		echo "¬ update about - About extension\r";
@@ -71,23 +72,23 @@
 	// returning the parent folder.
 	$path = explode("/", $cd);
 
-	// Count the number of elements in the full path so that the current folder can be removed
-	// and return only the parent
-	$size = count($path);
-	$size--;
-	unset($path[$size]);
+	// Drop the last 2 folders to get to the root extensions directory
+	$path = array_slice($path, 0, -2);
 
 	// Glue the full path back together
 	$path = implode("/", $path);
 
 	// Get a list of all items in the folder
-	$dirs = scandir($path);
 	$inc = 0;
-
+	$dirs = array();
 	// Remove items that aren't of interest
-	foreach($dirs as $dir):
+	foreach(scandir($path) as $dir):
 
-		if (!is_dir($path."/".$dir) || $dir == "." || $dir == "..") { unset($dirs[$inc]); }
+		if (!is_dir($path."/".$dir) || $dir == "." || $dir == "..") { continue; }
+		foreach(scandir($path."/".$dir) as $ext) {
+			if (!is_dir($path."/".$dir."/".$ext) || $ext == "." || $ext == "..") { continue; }
+			$dirs[] = array('name' => $ext , 'path' => "$path/$dir");
+		}
 		$inc++;
 
 	endforeach;
@@ -102,8 +103,10 @@
 	// 4. If a new version is available, read remote xml update url
 	// 5. Download updated extension
 	// 6. Unzip extension
-	foreach($dirs as $dir):
+	foreach($dirs as $ext):
 
+		$dir = $ext['name'];
+		$path = $ext['path'];
 		// Check for the existence of update.xml in the path
 		if (file_exists($path."/".$dir."/"."update.xml")) {
 
@@ -111,64 +114,71 @@
 			$lxml 	  = simplexml_load_file($path."/".$dir."/"."update.xml");
 			$lversion = floatval($lxml->version);
 			$lurl 	  = $lxml->url;
-
-			// Read the remote version and update url for the extension}
-			$rxml 	  = @simplexml_load_file($lurl);
 			
-			if ($rxml != false) {
+			if ($comm != "list") {
+
+				// Read the remote version and update url for the extension}
+				$rxml 	  = @simplexml_load_file($lurl);
+			
+				if ($rxml != false) {
 				
-				$rversion = floatval($rxml->version);
-				$rurl 	  = $rxml->url;
+					$rversion = floatval($rxml->version);
+					$rurl 	  = $rxml->url;
 
-				// If a new version exists, update
-				if ($lversion < $rversion) {
+					// If a new version exists, update
+					if ($lversion < $rversion) {
 					
-					// Set flag indicating that updates were found and then save
-					// remote filename
-					$updates = true;
-					$file = basename($rurl);
+						// Set flag indicating that updates were found and then save
+						// remote filename
+						$updates = true;
+						$file = basename($rurl);
 
-					if ($comm != "check") {
+						if ($comm != "check") {
 						
-						// Download the remote file via cURL then unzip and remove the
-						// newly downloaded extension
-						exec("curl \"$rurl\" > \"$path/$dir/$file\"");
-						if (file_exists("$path/$dir/$file")) {
+							// Download the remote file via cURL then unzip and remove the
+							// newly downloaded extension
+							exec("curl \"$rurl\" > \"$path/$dir/$file\"");
+							if (file_exists("$path/$dir/$file")) {
 						
-							str_replace("%20", " ", $file);
-							exec("unzip -o  \"$path/$dir/$file\" -d \"$path/$dir/\"");
-							exec("rm \"$path/$dir/$file\"");
+								str_replace("%20", " ", $file);
+								exec("unzip -o  \"$path/$dir/$file\" -d \"$path/$dir/\"");
+								exec("rm \"$path/$dir/$file\"");
 
+							}
+
+							// Inforom the user that the extension was updated
+							$lxml 	  = simplexml_load_file($path."/".$dir."/"."update.xml");
+							$lversion = floatval($lxml->version);
+							if ($lversion == $rversion) {
+								echo "Updated $dir\r";
+							}
+							else {
+								echo "Error updating $dir from $lversion to $rversion\r";
+							}
 						}
 
-						// Inforom the user that the extension was updated
-						$lxml 	  = simplexml_load_file($path."/".$dir."/"."update.xml");
-						$lversion = floatval($lxml->version);
-						if ($lversion == $rversion) {
-							echo "Updated $dir\r";
-						}
-						else {
-							echo "Error updating $dir from $lversion to $rversion\r";
-						}
-					}
-
-					else if ($comm == "check") {
+						else if ($comm == "check") {
 						
-						echo "¬ $dir $rversion is available.\r";
-						if (isset($rxml->comments)) {
-							echo $rxml->comments."\r";
+							echo "¬ $dir $rversion is available.\r";
+							if (isset($rxml->comments)) {
+								echo $rxml->comments."\r";
+							}
+
 						}
 
 					}
 
 				}
-
+			}
+			
+			else {
+				echo "¬  $dir $lversion\r";
 			}
 
 		}
 	endforeach;
 
 	// If no updates were found, inform the user
-	if (!$updates) { echo "No updates available"; }
+	if (!$updates && $comm != "list") { echo "No updates available"; }
 
 ?>
