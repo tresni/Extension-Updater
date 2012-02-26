@@ -116,28 +116,27 @@
 						$file = basename($rurl);
 
 						if ($comm != "check") {
+							// Download the remote file via cURL then unzip and remove the
+							// newly downloaded extension
+							exec("curl -s '$rurl' > '$dir/$file'");
+							if (file_exists("$dir/$file")) {
 						
-						// Download the remote file via cURL then unzip and remove the
-						// newly downloaded extension
-						exec("curl -s '$rurl' > '$dir/$file'");
-						if (file_exists("$dir/$file")) {
-						
-							str_replace("%20", " ", $file);
-							exec("unzip -q -o  '$dir/$file' -d '$dir/'");
-							exec("rm '$dir/$file'");
+								str_replace("%20", " ", $file);
+								exec("unzip -q -o  '$dir/$file' -d '$dir/'");
+								exec("rm '$dir/$file'");
 
-						}
+							}
 
-						// Inforom the user that the extension was updated
-						$lxml 	  = simplexml_load_file($dir."/"."update.xml");
-						$lversion = floatval($lxml->version);
-						if ($lversion == $rversion) {
-							echo "Updated $dir\r";
+							// Inforom the user that the extension was updated
+							$lxml 	  = simplexml_load_file($dir."/"."update.xml");
+							$lversion = floatval($lxml->version);
+							if ($lversion == $rversion) {
+								echo "Updated $dir\r";
+							}
+							else {
+								echo "Error updating $dir from $lversion to $rversion\r";
+							}
 						}
-						else {
-							echo "Error updating $dir from $lversion to $rversion\r";
-						}
-
 						else if ($comm == "check") {
 						
 							echo "¬ $dir $rversion is available.\r";
