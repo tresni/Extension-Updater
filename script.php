@@ -67,31 +67,13 @@
 
 	// Get the current directory
 	$cd = getcwd();
-	
-	// Split the full path into an array so that the current folder can be removed
-	// returning the parent folder.
-	$path = explode("/", $cd);
 
-	// Drop the last 2 folders to get to the root extensions directory
-	$path = array_slice($path, 0, -2);
-
-	// Glue the full path back together
-	$path = implode("/", $path);
-
-	// Get a list of all items in the folder
-	$inc = 0;
+	// Use glob to find all valid extensions with update.xml
+	// and get the directory they're in
 	$dirs = array();
-	// Remove items that aren't of interest
-	foreach(scandir($path) as $dir):
-
-		if (!is_dir($path."/".$dir) || $dir == "." || $dir == "..") { continue; }
-		foreach(scandir($path."/".$dir) as $ext) {
-			if (!is_dir($path."/".$dir."/".$ext) || $ext == "." || $ext == "..") { continue; }
-			$dirs[] = array('name' => $ext , 'path' => "$path/$dir");
-		}
-		$inc++;
-
-	endforeach;
+	foreach(glob("$cd/../../*/*/update.xml") as $xml) {
+		$dirs[] = dirname(realpath($xml));
+	}
 
 	$updates = false;
 
@@ -108,10 +90,10 @@
 		$dir = $ext['name'];
 		$path = $ext['path'];
 		// Check for the existence of update.xml in the path
-		if (file_exists($path."/".$dir."/"."update.xml")) {
+		if (file_exists($dir."/"."update.xml")) {
 
 			// Read the local version and update url for the extension
-			$lxml 	  = simplexml_load_file($path."/".$dir."/"."update.xml");
+			$lxml 	  = simplexml_load_file($dir."/"."update.xml");
 			$lversion = floatval($lxml->version);
 			$lurl 	  = $lxml->url;
 			
@@ -135,26 +117,25 @@
 
 						if ($comm != "check") {
 						
-							// Download the remote file via cURL then unzip and remove the
-							// newly downloaded extension
-							exec("curl \"$rurl\" > \"$path/$dir/$file\"");
-							if (file_exists("$path/$dir/$file")) {
+						// Download the remote file via cURL then unzip and remove the
+						// newly downloaded extension
+						exec("curl -s '$rurl' > '$dir/$file'");
+						if (file_exists("$dir/$file")) {
 						
-								str_replace("%20", " ", $file);
-								exec("unzip -o  \"$path/$dir/$file\" -d \"$path/$dir/\"");
-								exec("rm \"$path/$dir/$file\"");
+							str_replace("%20", " ", $file);
+							exec("unzip -q -o  '$dir/$file' -d '$dir/'");
+							exec("rm '$dir/$file'");
 
-							}
+						}
 
-							// Inforom the user that the extension was updated
-							$lxml 	  = simplexml_load_file($path."/".$dir."/"."update.xml");
-							$lversion = floatval($lxml->version);
-							if ($lversion == $rversion) {
-								echo "Updated $dir\r";
-							}
-							else {
-								echo "Error updating $dir from $lversion to $rversion\r";
-							}
+						// Inforom the user that the extension was updated
+						$lxml 	  = simplexml_load_file($dir."/"."update.xml");
+						$lversion = floatval($lxml->version);
+						if ($lversion == $rversion) {
+							echo "Updated $dir\r";
+						}
+						else {
+							echo "Error updating $dir from $lversion to $rversion\r";
 						}
 
 						else if ($comm == "check") {
