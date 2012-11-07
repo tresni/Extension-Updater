@@ -90,7 +90,7 @@
 		
 		// Read the local version and update url for the extension
 		$lxml 	  = simplexml_load_file($dir."/"."update.xml");
-		$lversion = floatval($lxml->version);
+		$lversion = $lxml->version;
 		$lurl 	  = $lxml->url;
 		
 		if ($comm != "list") {
@@ -100,11 +100,11 @@
 		
 			if ($rxml != false) {
 			
-				$rversion = floatval($rxml->version);
+				$rversion = $rxml->version;
 				$rurl 	  = $rxml->url;
 
 				// If a new version exists, update
-				if ($lversion < $rversion) {
+				if (version_compare($lversion, $rversion) < 0) {
 				
 					// Set flag indicating that updates were found and then save
 					// remote filename
@@ -125,8 +125,8 @@
 
 						// Inforom the user that the extension was updated
 						$lxml 	  = simplexml_load_file($dir."/"."update.xml");
-						$lversion = floatval($lxml->version);
-						if ($lversion == $rversion) {
+						$lversion = $lxml->version;
+						if (version_compare($lversion, $rversion) == 0) {
 							echo "Updated $extension\r";
 						}
 						else {
